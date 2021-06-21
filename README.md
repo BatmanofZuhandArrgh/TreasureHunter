@@ -1,2 +1,0 @@
-# TreasureHunter
-game, AI bot
