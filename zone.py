@@ -8,32 +8,37 @@ from pygame.locals import *
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-class test_block:
-    color = WHITE
-    index = 1
+class base_cell:
+    color = (0,0,0)
+    index = 0
+    change_score = 0
 
-class lava:
+class lava(base_cell):
     #Slowly hurts player if walked on
     color = (180,41,33)
     index = 1
+    change_score = -100
 
-class water: 
+class water(base_cell): 
     #Severely hurts player if walked on
     color = (0,0,205)
     index = 2
+    change_score = -5
 
-class escape_door:
+class escape_door(base_cell):
     #Finish game
     color = (0,220,0)
     index = 3
+    change_score = 0
 
 INDEX_DICT = {
+    0: base_cell,
     1: lava,
     2: water,
     3: escape_door,
 }
 
-class Surface:
+class Adventure:
     TEXT_PHASE = [
         "Designing phase:   Press q to quit, spacebar to continue",
         "Locating lava",
@@ -63,6 +68,7 @@ class Surface:
         #Player position
         self.icon = pygame.image.load(icon_image_path)
         self.position = (0,0)
+        self.score = 100
 
     def show_surface(self):
         self.empty_surface = pygame.Surface(self.size)
@@ -98,6 +104,14 @@ class Surface:
         
         if(self.screen_representation[self.position[0], self.position[1]] == 3):
             return True
+    
+    def check_loss_condition(self):
+        if self.score < 0:
+            return True
+        return False
+
+    def gain_or_lose_score(self):
+        self.score += INDEX_DICT[self.screen_representation[self.position[0], self.position[1]]].change_score
 
     def game_init(self):
         pygame.init()
@@ -119,7 +133,11 @@ class Surface:
 
         while not done:
             for event in pygame.event.get():
-                if event.type == MOUSEMOTION:
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+
+                elif event.type == MOUSEMOTION:
                     if (drawing): 
                         mouse_position = pygame.mouse.get_pos()
                         self.changeScreenRep(mouse_position, cell_type)
@@ -141,7 +159,7 @@ class Surface:
                         text = self.TEXT_PHASE[self.TEXT_PHASE.index(text)+1]
                         text_surface = font.render(text, True, WHITE)
                         cell_type = INDEX_DICT[self.TEXT_PHASE.index(text)]
-                    elif text in (self.TEXT_PHASE[-1], ''):
+                    elif text == self.TEXT_PHASE[-1] or 'Score' in text:
                         mouse_position = (-1,-1)
                         if(event.key == pygame.K_UP):
                             self.position = (self.position[0], max(0, self.position[1]-1))
@@ -152,7 +170,9 @@ class Surface:
                         elif(event.key == pygame.K_RIGHT):
                             self.position = (min(self.position[0] + 1, self.width), self.position[1])
 
-                        text = ''
+                        self.gain_or_lose_score()
+
+                        text = f'Score: {self.score}'
                         text_surface = font.render(text, True, WHITE)
                         
 
@@ -162,6 +182,10 @@ class Surface:
             if(self.check_win_condition()):
                 text = 'You won'
                 text_surface = font.render(text, True, (0,255,0))
+            
+            if(self.check_loss_condition()):
+                text = 'You lost'
+                text_surface = font.render(text, True, (255,0,0))
              
             self.screen.blit(self.icon, (self.position[0] * self.blockSize, self.position[1] *  self.blockSize))
             self.screen.blit(text_surface, (0,0))
@@ -170,6 +194,6 @@ class Surface:
 
 
 if __name__ == "__main__":
-    surface = Surface()
+    main_game = Adventure()
 
-    surface.game_init()
+    main_game.game_init()
