@@ -5,6 +5,8 @@ import pygame
 from pygame import mouse
 from pygame.locals import *
 
+from .bot import Q_learning_AI, Reinforcement_AI
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
@@ -69,6 +71,12 @@ class Adventure:
         self.icon = pygame.image.load(icon_image_path)
         self.position = (0,0)
         self.score = 100
+
+        #Bot
+        self.player = None
+
+    def get_bot(self, type = Q_learning_AI):
+        self.player = type()
 
     def show_surface(self):
         self.empty_surface = pygame.Surface(self.size)
