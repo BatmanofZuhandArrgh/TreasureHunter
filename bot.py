@@ -6,10 +6,10 @@ STARTING_SCORE = 100
 class Reinforcement_AI:
     def __init__(self, reward_matrix):
         self.action = [
-            'go_left',
-            'go_right',
-            'go_down',
-            'go_up'
+            'left',
+            'right',
+            'down',
+            'up'
         ]
         self.reward_matrix = reward_matrix
         self.score = STARTING_SCORE
@@ -18,6 +18,18 @@ class Reinforcement_AI:
 
     def run():
         pass
+
+class temp(Reinforcement_AI):
+    def __init__(self, reward_matrix):
+        super(temp, self).__init__(reward_matrix=reward_matrix)
+        
+    def train(self):
+        print('train')
+
+    def run(self):
+        print('run')
+        return ['right', 'down']*3 
+
 
 class Q_learning_AI(Reinforcement_AI):
     def __init__(
@@ -62,10 +74,10 @@ class Q_learning_AI(Reinforcement_AI):
             
             while self.score > 0 and self.score < 200:
                 
-            if random.random() >= epsilon:
-                reward = self.explore()
-            elif random.random() < epsilon:
-                reward = self.exploit()
+                if random.random() >= epsilon:
+                    reward = self.explore()
+                elif random.random() < epsilon:
+                    reward = self.exploit()
 
 
 
