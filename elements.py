@@ -49,8 +49,11 @@ class Adventure:
     ]
 
     def __init__(self, 
+
         width: int = 1000,
-        divider:int = 20,
+        # divider:int = 20,
+        divider:int = 5,
+        
         icon_image_path:str = 'assets/icons8-batman-48.png', 
         bot_type = 'temp'
         ):
@@ -58,6 +61,7 @@ class Adventure:
         if(width % divider != 0):
             width -= width%divider
         
+        self.divider = divider
         self.width = width
         self.size = (width, width)
         self.empty_surface = None
@@ -65,11 +69,12 @@ class Adventure:
 
         self.blockSize = int(width // divider)
 
-        self.screen_representation = np.zeros(((self.blockSize, self.blockSize)))
+        self.screen_representation = np.zeros(((divider, divider)))
         self.screen_full = np.zeros((self.size))
         
         #Player position
         self.icon = pygame.image.load(icon_image_path)
+        self.prev_position = (0,0)
         self.position = (0,0)
         self.score = 100
 
@@ -89,11 +94,13 @@ class Adventure:
         return self.empty_surface
 
     def drawGrid(self):
+        # Draw lines in grid
         for x in range(0, self.width, self.blockSize):
             for y in range(0, self.width, self.blockSize):
                 rect = pygame.Rect(x, y, self.blockSize, self.blockSize)
                 pygame.draw.rect(self.screen, WHITE, rect, 1)
-            
+        
+        # Paint grid box
         for i in range(len(self.screen_representation)):
             for j in range(len(self.screen_representation)):
                 if self.screen_representation[i][j] != 0:
@@ -102,12 +109,11 @@ class Adventure:
     def changeScreenRep(self, mouse_position, cell_type):
         #Changing a specific index number in the screen representation, to signal the gridbox to change color
         rep_width_index, rep_height_index = mouse_position[0]//self.blockSize, mouse_position[1]//self.blockSize
-
         self.screen_representation[rep_width_index][rep_height_index] = cell_type.index
-            
+        
     def paintGridBox(self, rep_width_index, rep_height_index, cell_type):
         #Painting inside gridbox, either lava, spikes or exit_door
-        
+        rep_width_index, rep_height_index =   rep_height_index,rep_width_index
         for x in range(rep_width_index*self.blockSize, (rep_width_index+1)*self.blockSize):
             for y in range(rep_height_index*self.blockSize, (rep_height_index+1)*self.blockSize):
                 pygame.draw.circle(self.screen, cell_type.color, (x,y), 1)
@@ -126,7 +132,8 @@ class Adventure:
 
     def gain_or_lose_score(self):
         self.score += INDEX_DICT[self.screen_representation[self.position[0], self.position[1]]].change_score
-
+        
+        
     def game_init(self, player = 'bot'):
         pygame.init()
 
@@ -156,6 +163,7 @@ class Adventure:
                 elif event.type == MOUSEMOTION and design_mode == True:
                     if (drawing): 
                         mouse_position = pygame.mouse.get_pos()
+                        mouse_position = (mouse_position[-1],mouse_position[0])
                         self.changeScreenRep(mouse_position, cell_type)
 
                 elif event.type == MOUSEBUTTONUP and design_mode == True:
@@ -165,6 +173,7 @@ class Adventure:
                 elif event.type == MOUSEBUTTONDOWN and design_mode == True:
                     drawing = True
                     mouse_position = pygame.mouse.get_pos()
+                    mouse_position = (mouse_position[-1],mouse_position[0])
                     self.changeScreenRep(mouse_position, cell_type)
 
                 elif event.type == KEYDOWN:
@@ -172,6 +181,7 @@ class Adventure:
                         #Quit
                         pygame.quit()
                         sys.exit()    
+
                     elif event.key == pygame.K_SPACE and text != self.TEXT_PHASE[-1] and text in self.TEXT_PHASE and design_mode == True:
                         # Programming the next phase in design mode
                         text = self.TEXT_PHASE[self.TEXT_PHASE.index(text)+1]
@@ -182,17 +192,16 @@ class Adventure:
                         # Controls for player
                         design_mode = False #Shut off design mode
                         mouse_position = (-1,-1)
-
                         if(player == 'human'):
                             if(event.key == pygame.K_UP):
-                                self.position = (self.position[0], max(0, self.position[1]-1))
-                            elif(event.key == pygame.K_DOWN):
-                                self.position = (self.position[0], min(self.position[1] + 1, self.width))
-                            elif(event.key == pygame.K_LEFT):
                                 self.position = (max(self.position[0] - 1, 0), self.position[1])
+                            elif(event.key == pygame.K_DOWN):
+                                self.position = (min(self.position[0] + 1, self.divider-1), self.position[1])
+                            elif(event.key == pygame.K_LEFT):
+                                self.position = (self.position[0], max(0, self.position[1]-1))
                             elif(event.key == pygame.K_RIGHT):
-                                self.position = (min(self.position[0] + 1, self.width), self.position[1])
-
+                                self.position = (self.position[0], min(self.position[1] + 1, self.divider-1))
+                                
                         elif(player == 'bot'):
                             if (self.bot == None):
                                 #If bot is not created, create bot and train bot and infer path
@@ -200,19 +209,19 @@ class Adventure:
 
                                 self.bot.train()
                     
-                                self.bot_infer_path = self.bot.run()
+                                self.bot_infer_path = self.bot.run(self.position)
 
                                 path_index = 0
                                                         
                             #Moving a bot
                             if(self.bot_infer_path[path_index] == 'up'):
-                                self.position = (self.position[0], max(0, self.position[1]-1))
-                            elif(self.bot_infer_path[path_index] == 'down'):
-                                self.position = (self.position[0], min(self.position[1] + 1, self.width))
-                            elif(self.bot_infer_path[path_index] == 'left'):
                                 self.position = (max(self.position[0] - 1, 0), self.position[1])
+                            elif(self.bot_infer_path[path_index] == 'down'):
+                                self.position = (min(self.position[0] + 1, self.divider-1), self.position[1])
+                            elif(self.bot_infer_path[path_index] == 'left'):
+                                self.position = (self.position[0], max(0, self.position[1]-1))
                             elif(self.bot_infer_path[path_index] == 'right'):
-                                self.position = (min(self.position[0] + 1, self.width), self.position[1])
+                                self.position = (self.position[0], min(self.position[1] + 1, self.divider-1))
                             path_index += 1
 
                             if(path_index == len(self.bot_infer_path)):
@@ -224,7 +233,7 @@ class Adventure:
                         text_surface = font.render(text, True, WHITE)
 
             self.screen.fill(BLACK)
-            self.drawGrid()        
+            self.drawGrid()       
 
             if(self.check_win_condition()):
                 text = 'You won'
@@ -233,12 +242,11 @@ class Adventure:
             if(self.check_loss_condition()):
                 text = 'You lost'
                 text_surface = font.render(text, True, (255,0,0))
-             
-            self.screen.blit(self.icon, (self.position[0] * self.blockSize, self.position[1] *  self.blockSize))
+        
+            self.screen.blit(self.icon, (self.position[1] * self.blockSize, self.position[0] *  self.blockSize))
             self.screen.blit(text_surface, (0,0))
 
             pygame.display.update()
-
 
 if __name__ == "__main__":
     main_game = Adventure()
