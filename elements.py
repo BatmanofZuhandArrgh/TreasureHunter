@@ -74,7 +74,6 @@ class Adventure:
         
         #Player position
         self.icon = pygame.image.load(icon_image_path)
-        self.prev_position = (0,0)
         self.position = (0,0)
         self.score = 100
 
