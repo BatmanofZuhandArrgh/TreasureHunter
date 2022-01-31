@@ -5,7 +5,8 @@ import pygame
 from pygame import mouse
 from pygame.locals import *
 
-from bot import Q_learning_AI, temp
+from search_bot import breadth_first_tree_search
+from reinforcement_ai import Q_learning_AI, temp
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -51,8 +52,7 @@ class Adventure:
     def __init__(self, 
 
         width: int = 1000,
-        # divider:int = 20,
-        divider:int = 5,
+        divider:int = 20,
         
         icon_image_path:str = 'assets/icons8-batman-48.png', 
         bot_type = 'temp'
@@ -83,10 +83,13 @@ class Adventure:
         self.bot_infer_path = None
 
     def get_bot(self):
+        print('Create bot')
         if(self.bot_type == 'temp'):
             self.bot = temp(reward_matrix = self.screen_representation)
         elif(self.bot_type == 'Q_learning_AI'):
             self.bot = Q_learning_AI(reward_matrix = self.screen_representation)
+        elif(self.bot_type == 'breadth_first_search'):
+            self.bot = breadth_first_tree_search(position = self.position)
 
     def show_surface(self):
         self.empty_surface = pygame.Surface(self.size)
@@ -149,7 +152,7 @@ class Adventure:
         text_surface = font.render(text, True, WHITE)
         self.screen.blit(text_surface, dest=(0,0))
 
-        cell_type = lava
+        cell_type = base_cell
 
         design_mode = True 
 
@@ -159,29 +162,29 @@ class Adventure:
                     pygame.quit()
                     exit()
 
-                elif event.type == MOUSEMOTION and design_mode == True:
+                elif event.type == MOUSEMOTION and design_mode:
                     if (drawing): 
                         mouse_position = pygame.mouse.get_pos()
                         mouse_position = (mouse_position[-1],mouse_position[0])
                         self.changeScreenRep(mouse_position, cell_type)
 
-                elif event.type == MOUSEBUTTONUP and design_mode == True:
+                elif event.type == MOUSEBUTTONUP and design_mode:
                     mouse_position = (-1, -1)
                     drawing = False
 
-                elif event.type == MOUSEBUTTONDOWN and design_mode == True:
+                elif event.type == MOUSEBUTTONDOWN and design_mode:
                     drawing = True
                     mouse_position = pygame.mouse.get_pos()
                     mouse_position = (mouse_position[-1],mouse_position[0])
                     self.changeScreenRep(mouse_position, cell_type)
 
                 elif event.type == KEYDOWN:
-                    if event.key == pygame.K_q:
+                    if event.key in  (pygame.K_q,pygame.K_ESCAPE):
                         #Quit
                         pygame.quit()
                         sys.exit()    
 
-                    elif event.key == pygame.K_SPACE and text != self.TEXT_PHASE[-1] and text in self.TEXT_PHASE and design_mode == True:
+                    elif event.key == pygame.K_SPACE and text != self.TEXT_PHASE[-1] and text in self.TEXT_PHASE and design_mode:
                         # Programming the next phase in design mode
                         text = self.TEXT_PHASE[self.TEXT_PHASE.index(text)+1]
                         text_surface = font.render(text, True, WHITE)
@@ -200,36 +203,37 @@ class Adventure:
                                 self.position = (self.position[0], max(0, self.position[1]-1))
                             elif(event.key == pygame.K_RIGHT):
                                 self.position = (self.position[0], min(self.position[1] + 1, self.divider-1))
-                                
-                        elif(player == 'bot'):
-                            if (self.bot == None):
-                                #If bot is not created, create bot and train bot and infer path
-                                self.get_bot()
-
-                                self.bot.train()
-                    
-                                self.bot_infer_path = self.bot.run(self.position)
-
-                                path_index = 0
-                                                        
-                            #Moving a bot
-                            if(self.bot_infer_path[path_index] == 'up'):
-                                self.position = (max(self.position[0] - 1, 0), self.position[1])
-                            elif(self.bot_infer_path[path_index] == 'down'):
-                                self.position = (min(self.position[0] + 1, self.divider-1), self.position[1])
-                            elif(self.bot_infer_path[path_index] == 'left'):
-                                self.position = (self.position[0], max(0, self.position[1]-1))
-                            elif(self.bot_infer_path[path_index] == 'right'):
-                                self.position = (self.position[0], min(self.position[1] + 1, self.divider-1))
-                            path_index += 1
-
-                            if(path_index == len(self.bot_infer_path)):
-                                raise IndexError("Bot inferred path does not finish the game")
+                        elif player == "bot":
+                            break
 
                         self.gain_or_lose_score()
 
                         text = f'Score: {self.score}'
                         text_surface = font.render(text, True, WHITE)
+
+
+            if(player == 'bot') and design_mode == False:
+                if (self.bot == None):
+                    #If bot is not created, create bot and train bot and infer path
+                    self.get_bot()
+                    text = f'Score: {self.score}'
+                    text_surface = font.render(text, True, WHITE)
+
+                print('do bots thing')
+                                            
+            #     #Moving a bot
+            #     if(self.bot_infer_path[path_index] == 'up'):
+            #         self.position = (max(self.position[0] - 1, 0), self.position[1])
+            #     elif(self.bot_infer_path[path_index] == 'down'):
+            #         self.position = (min(self.position[0] + 1, self.divider-1), self.position[1])
+            #     elif(self.bot_infer_path[path_index] == 'left'):
+            #         self.position = (self.position[0], max(0, self.position[1]-1))
+            #     elif(self.bot_infer_path[path_index] == 'right'):
+            #         self.position = (self.position[0], min(self.position[1] + 1, self.divider-1))
+            #     path_index += 1
+
+                # if(path_index == len(self.bot_infer_path)):
+                #     raise IndexError("Bot inferred path does not finish the game")
 
             self.screen.fill(BLACK)
             self.drawGrid()       
