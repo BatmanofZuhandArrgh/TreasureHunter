@@ -55,7 +55,6 @@ class Adventure:
         divider:int = 20,
         
         icon_image_path:str = 'assets/icons8-batman-48.png', 
-        bot_type = 'temp'
         ):
         
         if(width % divider != 0):
@@ -79,7 +78,7 @@ class Adventure:
 
         #Bot
         self.bot = None
-        self.bot_type = bot_type
+        self.bot_type = None
         self.bot_infer_path = None
 
     def get_bot(self):
@@ -135,8 +134,30 @@ class Adventure:
     def gain_or_lose_score(self):
         self.score += INDEX_DICT[self.screen_representation[self.position[0], self.position[1]]].change_score
         
+    def get_surrounding(self, leaf_node):
+        position = leaf_node.position
+        parent_position = leaf_node.parent.position
+
+        surroundings = []
+        for i in range(-1,2):
+            for j in range(-1,2):
+                x = position[0]+i
+                y = position[1]+j
+                if x >= 0 and y >= 0 and x <= len(self.screen_representation)-1 and y <= len(self.screen_representation)-1:
+                    surroundings.append((x, y))
+
+        # Remove parent position, so that the path won't return to its parent
+        if parent_position != None:
+            position.remove(parent_position)
         
-    def game_init(self, player = 'bot'):
+        return surroundings
+
+    def draw_tree_paths(self, paths):
+        for path in paths:
+            pass
+        
+    def game_init(self, player = 'bot', bot_type = 'temp'):
+        self.bot_type = bot_type
         pygame.init()
 
         mouse_position = (-1, -1)
@@ -216,10 +237,16 @@ class Adventure:
                 if (self.bot == None):
                     #If bot is not created, create bot and train bot and infer path
                     self.get_bot()
+
                     text = f'Score: {self.score}'
                     text_surface = font.render(text, True, WHITE)
 
-                print('do bots thing')
+                if 'tree_search' in self.bot_type:
+                    outer_leaves = self.bot.outer_leaves
+                    fringe = []
+                    for leaf in outer_leaves:
+                        fringe.append(self.get_surrounding(leaf))
+                    paths2draw = self.bot.query_surrounding(fringe)
                                             
             #     #Moving a bot
             #     if(self.bot_infer_path[path_index] == 'up'):

@@ -8,7 +8,11 @@ class Bot:
             'left',
             'right',
             'down',
-            'up'
+            'up',
+            'up-left',
+            'up-right',
+            'down-left',
+            'down-right'
         ]
         self.position = position
         self.state = "Searching"
