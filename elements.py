@@ -1,3 +1,4 @@
+from lib2to3 import pygram
 import os
 import sys
 import numpy as np
@@ -87,8 +88,10 @@ class Adventure:
             self.bot = temp(reward_matrix = self.screen_representation)
         elif(self.bot_type == 'Q_learning_AI'):
             self.bot = Q_learning_AI(reward_matrix = self.screen_representation)
-        elif(self.bot_type == 'breadth_first_search'):
+        elif(self.bot_type == 'breadth_first_tree_search'):
             self.bot = breadth_first_tree_search(position = self.position)
+        else:
+            raise(ValueError("Bot type not found"))
 
     def show_surface(self):
         self.empty_surface = pygame.Surface(self.size)
@@ -147,15 +150,12 @@ class Adventure:
                     surroundings.append((x, y))
 
         # Remove parent position, so that the path won't return to its parent
-        if parent_position != None:
-            position.remove(parent_position)
-        
+        if parent_position != (-1,-1):
+            surroundings.remove(parent_position)
+        surroundings.remove(position)
+
         return surroundings
 
-    def draw_tree_paths(self, paths):
-        for path in paths:
-            pass
-        
     def game_init(self, player = 'bot', bot_type = 'temp'):
         self.bot_type = bot_type
         pygame.init()
@@ -231,7 +231,9 @@ class Adventure:
 
                         text = f'Score: {self.score}'
                         text_surface = font.render(text, True, WHITE)
-
+                        
+            self.screen.fill(BLACK)
+            self.drawGrid()   
 
             if(player == 'bot') and design_mode == False:
                 if (self.bot == None):
@@ -243,27 +245,24 @@ class Adventure:
 
                 if 'tree_search' in self.bot_type:
                     outer_leaves = self.bot.outer_leaves
+                    fringe_positions = [x.position for x in outer_leaves]
+                    print(fringe_positions)
                     fringe = []
                     for leaf in outer_leaves:
                         fringe.append(self.get_surrounding(leaf))
                     paths2draw = self.bot.query_surrounding(fringe)
-                                            
-            #     #Moving a bot
-            #     if(self.bot_infer_path[path_index] == 'up'):
-            #         self.position = (max(self.position[0] - 1, 0), self.position[1])
-            #     elif(self.bot_infer_path[path_index] == 'down'):
-            #         self.position = (min(self.position[0] + 1, self.divider-1), self.position[1])
-            #     elif(self.bot_infer_path[path_index] == 'left'):
-            #         self.position = (self.position[0], max(0, self.position[1]-1))
-            #     elif(self.bot_infer_path[path_index] == 'right'):
-            #         self.position = (self.position[0], min(self.position[1] + 1, self.divider-1))
-            #     path_index += 1
-
-                # if(path_index == len(self.bot_infer_path)):
-                #     raise IndexError("Bot inferred path does not finish the game")
-
-            self.screen.fill(BLACK)
-            self.drawGrid()       
+                    
+                    for path in paths2draw:
+                        # Drawing paths
+                        # print(path)
+                        start_point = (25+path[0][0]*50,25+path[0][1]*50)
+                        end_point = (25+path[1][0]*50,25+path[1][1]*50)
+                        pygame.draw.line(self.screen, (255,255,255), start_pos=start_point, end_pos=end_point, width= 10)
+                        pygame.draw.circle(self.screen, color=(255,0,0),center=start_point, radius = 5)
+                        # pygame.draw.circle(self.screen, color=(255,0,0),center=end_point, radius = 5)
+    
+                    print('-------------------------')
+                    pygame.time.delay(1000)
 
             if(self.check_win_condition()):
                 text = 'You won'
